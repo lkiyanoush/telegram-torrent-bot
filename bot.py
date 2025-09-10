@@ -1,14 +1,12 @@
 import os
-import subprocess
+import time
+import libtorrent as lt
 from telegram import Update
 from telegram.ext import Application, MessageHandler, filters, ContextTypes
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")  # توکن ربات از محیط اجرا گرفته میشه
-
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-
-ARIA2_PATH = "aria2c"  # فرض می‌کنیم aria2c در محیط اجرا نصب شده
 
 async def handle_torrent(update: Update, context: ContextTypes.DEFAULT_TYPE):
     doc = update.message.document
@@ -18,22 +16,35 @@ async def handle_torrent(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text("📥 دریافت فایل تورنت...")
 
-    # دانلود فایل تورنت از تلگرام
+    # ذخیره فایل تورنت
     torrent_path = os.path.join(DOWNLOAD_DIR, doc.file_name)
     file = await doc.get_file()
     await file.download_to_drive(torrent_path)
 
     await update.message.reply_text("🚀 شروع دانلود تورنت...")
 
-    # اجرای aria2c برای دانلود فایل تورنت
-    subprocess.run([
-        ARIA2_PATH,
-        "--seed-time=0",
-        "-d", DOWNLOAD_DIR,
-        torrent_path
-    ])
+    # تنظیمات libtorrent
+    ses = lt.session()
+    ses.listen_on(6881, 6891)
+    info = lt.torrent_info(torrent_path)
+    params = {
+        'save_path': DOWNLOAD_DIR,
+        'storage_mode': lt.storage_mode_t(2),
+        'ti': info
+    }
+    h = ses.add_torrent(params)
 
-    # پیدا کردن فایل دانلود شده
+    # منتظر دانلود
+    while not h.is_seed():
+        s = h.status()
+        percent = s.progress * 100
+        update_text = f"⬇️ دانلود: {percent:.2f}%"
+        await update.message.reply_text(update_text)
+        time.sleep(5)
+
+    await update.message.reply_text("✅ دانلود کامل شد. ارسال فایل...")
+
+    # ارسال فایل‌ها
     sent_any = False
     for fname in os.listdir(DOWNLOAD_DIR):
         fpath = os.path.join(DOWNLOAD_DIR, fname)
