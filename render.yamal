@@ -1,6 +1,6 @@
 services:
   - type: worker
-    name: telegram-torrent-bot
+    name: telegram-test-bot
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: python bot.py
