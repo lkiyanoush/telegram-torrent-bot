@@ -61,7 +61,7 @@ async def handle_torrent(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
-    app.add_handler(MessageHandler(filters.Document.MIME_TYPE("application/x-bittorrent"), handle_torrent))
+    app.add_handler(MessageHandler(filters.Document.ALL, handle_torrent))
     app.run_polling()
 
 if __name__ == "__main__":
