@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: telegram-torrent-bot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    envVars:
+      - key: BOT_TOKEN
+        value: 8275817834:AAEDplV_6TBBJzHG8oUuoEo0Vw8zwUKtDFU
